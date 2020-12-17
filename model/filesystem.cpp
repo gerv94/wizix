@@ -35,8 +35,19 @@ void filesystem::init()
 void filesystem::mountDisk()
 {
 	LOG("Mounting disk");
-	
-	char buffer[BLOCK_SIZE];
+
+	FILE *fr = fopen(DISK_FILE, "rb");
+
+	fread(bootblock.data, BLOCK_SIZE, 1, fr);
+
+	for (int i = 0; i < BLOCK_SIZE; i++)
+	{
+		printf("%c", bootblock.data[i]);
+	}
+
+	printf("\n");
+
+	fclose(fr);
 }
 void filesystem::createDisk(const char *disk_file)
 {
@@ -47,14 +58,16 @@ void filesystem::createDisk(const char *disk_file)
 	memset(buffer, 0, BLOCK_SIZE); // intialize null buffer
 
 	// Using buffer to initialize whole disk as NULL
-	fwrite(buffer, BLOCK_SIZE, BLOCKS, diskptr);
+	/* Using buffer to initialize whole disk as NULL  */
+    for (int i = 0; i < BLOCKS; ++i)
+        fwrite(buffer, 1, BLOCK_SIZE, diskptr);
 
 	// Initializing SuperBlock
 
 	int inodeListBlocks = getInodeListBlockCount();
 	int datablocks = BLOCKS - 2 - inodeListBlocks; // 2 because of Boot and Super Blocks
-	int nextFirstblock = 2 + inodeListBlocks + 1; // 2 because of Boot and Super Blocks
-	
+	int nextFirstblock = 2 + inodeListBlocks + 1;  // 2 because of Boot and Super Blocks
+
 	superblock.filesystem_size = BLOCKS * BLOCK_SIZE;
 
 	superblock.free_blocks_num = datablocks;
@@ -65,7 +78,7 @@ void filesystem::createDisk(const char *disk_file)
 	superblock.next_free_inode = EXT4_ROOT_INO; // Offset 2 from inodelist
 
 	superblock.modified = false;
-	
+
 	LOG("File System size: " << superblock.filesystem_size << " bytes");
 	LOG("Free Blocks: " << superblock.free_blocks_num);
 	LOG("Next first block: " << nextFirstblock);
@@ -87,11 +100,14 @@ void filesystem::createDisk(const char *disk_file)
 	}
 
 	// Storing BootBlock
+	for (int i = 0; i < BLOCK_SIZE; i++){
+		bootblock.data[i] = '*';
+	}
 	fseek(diskptr, 0, SEEK_SET);
 	fwrite(&bootblock, sizeof(BootBlock), 1, diskptr);
 
 	// Storing SuperBlock after BootBlock
-	fseek(diskptr, sizeof(BLOCK_SIZE) * 1, SEEK_SET);
+	fseek(diskptr, BLOCK_SIZE, SEEK_SET);
 	fwrite(&superblock, sizeof(SuperBlock), 1, diskptr);
 
 	// Storing Inode list after SuperBlock
@@ -102,14 +118,15 @@ void filesystem::createDisk(const char *disk_file)
 	LOG("File system disk created");
 }
 
-void filesystem::createRootDir(){
+void filesystem::createRootDir()
+{
 	// Storing root Inode
 	Inode root_inode;
 	time_t now = time(0);
 	root_inode.own_usr = 0; // meaning root
 	root_inode.own_grp = 0; // meaning root
 	root_inode.type = DIRECTORY;
-	root_inode.permissions = 755; // d rwx r-x r-x 
+	root_inode.permissions = 755; // d rwx r-x r-x
 	root_inode.modify_time = now;
 	root_inode.access_time = now;
 	root_inode.inode_time = now;
@@ -134,6 +151,66 @@ int filesystem::getInodeListBlockCount()
 {
 	int res = ceil((float)(INODES * sizeof(Inode)) / BLOCK_SIZE);
 	return res;
+}
+
+Inode filesystem::iget(unsigned short inode_id)
+{
+	Inode inode;
+	fseek(fr, BLOCK_SIZE * 2, SEEK_SET);
+	fread(&inode, sizeof(Inode), 1, diskptr);
+
+	return inode;
+}
+
+void filesystem::touch(unsigned short parent_inode, const char *file_name)
+{
+	if (strlen(file_name) >= sizeof(DirectoryItem::name))
+	{
+		std::cout << "The filename name is too long. \n";
+		return;
+	}
+
+	//Check if there is a file with the same name, if there is an error, exit the program. If not, create an empty file
+	DirectoryItem dirlist[16]; //Temporary directory list
+
+	Inode current_inode;
+	//fseek(fr, parent_inode, SEEK_SET); // parent_inode contaions the inode offset so calculate it's position on the file and read it
+	//fread(&cur, sizeof(Inode), 1, fr);
+}
+
+Inode filesystem::namei(const char *path)
+{
+	/*
+if (path name starts from root)
+	working inode - root inode (algorithm iget);
+else
+	working inode - current directory inode (algorithm iget);
+while (there is more path name)
+{
+	read next path name component from input;
+	verify that working inode is of directory, access permissions OK;
+	if (working inode is of root and component is " .. ")
+		continue;
+	read directory (working inode) by repeated use of algorithms
+		bmap, bread and brelse;
+	if (component matches an entry in directory (working inode))
+	{
+		get inode number for matched component;
+		release working inode (algorithm iput);
+		working inode - inode of matched component (algorithm iget);
+	}
+	else
+		return (no inode);
+}
+return (working inode);
+*/
+	Inode current_inode;
+	if (path[0] == '/')
+	{
+		// Get root Inode
+	}
+
+	return current_inode;
 }
 
 bool filesystem::format(const char *diskfile)

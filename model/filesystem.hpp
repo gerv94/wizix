@@ -41,6 +41,11 @@ public:
 	void createDisk(const char *);
 	int getInodeListBlockCount();
 	void createRootDir();
+	Inode iget(unsigned short);
+	Inode namei(const char *); /* convert path name to inode */ 
+
+	void touch(unsigned short, const char *);
+
 
 	bool format(const char *); //Formats the virtual disk file
 
