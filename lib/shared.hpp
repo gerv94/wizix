@@ -6,21 +6,6 @@
 #include <time.h>
 #include <unistd.h>
 
-#define MFS_BUFFER 100000 // 100K, virtual disk buffer
-#define FILE_BUFFER 10000 // 10K, file buffer
-#define INODE_SIZE 128	  // The size of the inode node is 128B. Note: sizeof(Inode) cannot exceed this value
-#define MAX_NAME_SIZE 28  // Maximum name length, the length should be less than this size
-
-#define INODE_NUM 640		//Number of inode nodes, up to 64 files
-#define BLOCK_NUM 10240		//Block number, 10240 * 512B = 5120KB
-#define BLOCKS_PER_GROUP 64 //Free block stack size, how many disk block addresses can be stored in a free stack
-
-#define MODE_DIR 01000	//Directory identification
-#define MODE_FILE 00000 //File identification
-
-#define FILE_DEF_PERMISSION 0664 //File default permissions
-#define DIR_DEF_PERMISSION 0755	 //Directory default permissions
-
 // :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 #define EXT4_BAD_INO             1      /* Bad blocks inode */

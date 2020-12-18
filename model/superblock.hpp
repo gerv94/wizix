@@ -4,18 +4,17 @@ struct SuperBlock
 {
 	// ::::::::::::::::::::::::::::::::::::::::::::::::
 
-	int filesystem_size; // BootBlock + SuperBlock + InodeListBlock + DataBlocks
-	int free_blocks_num;
+	int filesystem_size; // 4 bytes BootBlock + SuperBlock + InodeListBlock + DataBlocks
+	int free_blocks_num; 
 	int next_free_block;
-
 	int inodelist_size;
 	int free_inodes_num;
 	int next_free_inode;
 
 	bool modified;
 
-	int free_blocks[INODES] = {0}; // 0 means free, 1 occupied
-	int free_inodes[BLOCKS] = {0}; // 0 means free, 1 occupied
+	int free_blocks[BLOCKS] = {0}; // 0 means free, 1 occupied
+	int free_inodes[INODES] = {0}; // 0 means free, 1 occupied
 };
 
 /*

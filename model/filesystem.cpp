@@ -37,14 +37,30 @@ void filesystem::startConsole()
 {
 	char command[64];
 	unsigned int current_inode = EXT4_ROOT_INO;
+	std::string current_path = "/";
 	while (true)
 	{
-		std::cout << "root@wizix:/$ "; // TODO: print current directory
+		std::cout << "root@wizix:" << current_path << "$ "; // TODO: print current user
 		std::cin >> command;
 
 		if (strcmp(command, "help") == 0)
 		{
-			printf("Help command\n");
+			std::cout << "\nGNU wixiz, version 0.0.1(1)-release (linux)\n"
+					  << "These shell commands are defined internally.  Type `help' to see this list.\n\n"
+					  << "ls \t\t\t\t Lists the current directory items and its attributes.\n"
+					  << "mkdir <dir_name> \t\t Creates a directory in the current path.\n"
+					  << "touch <file_name> \t\t Creates an empty file and allocates is block.\n"
+					  << "vi <file_name> \t\t\t Opens a file to edit (Currently it doesn't support updating just rewrite).\n"
+					  << "cat <file_name> \t\t Outputs the content of a file to the console.\n"
+					  << "rm <file_name> \t\t\t Deletes a file and liberates it's space.\n"
+					  << "rmdir <dir_name> \t\t Deletes an empty directory.\n"
+					  << "cd <dir_name> \t\t\t Change current directory to dir_name.\n"
+					  << "pwd \t\t\t\t Prints current directory.\n"
+					  << "freei \t\t\t\t Prints superblock free inodes.\n"
+					  << "freeb \t\t\t\t Prints superblock free datablocks.\n"
+					  << "clear \t\t\t\t Clears the console.\n"
+					  << "exit \t\t\t\t Exits the system.\n"
+					  << "\n";
 		}
 		else if (strcmp(command, "exit") == 0)
 		{
@@ -53,7 +69,6 @@ void filesystem::startConsole()
 		}
 		else if (strcmp(command, "clear") == 0)
 		{
-			// CSI[2J clears screen, CSI[H moves the cursor to top-left corner
 			std::cout << "\x1B[2J\x1B[H";
 		}
 		else if (strcmp(command, "ls") == 0)
@@ -90,19 +105,73 @@ void filesystem::startConsole()
 			std::cin >> command;
 			rmdir(iget(current_inode), command);
 		}
+		else if (strcmp(command, "pwd") == 0)
+		{
+			std::cout << current_path << "\n";
+		}
+		else if (strcmp(command, "freei") == 0)
+		{
+			std::cout << "Total of free inodes: " << superblock.free_inodes_num << "\n";
+			std::cout << "Next free inode: " << superblock.next_free_inode << "\n";
+			for (int i = EXT4_ROOT_INO; i < INODES; i++)
+			{
+				if (superblock.free_inodes[i] == 0)
+				{
+					std::cout << "[" << i << "] ";
+				}
+			}
+			std::cout << "\n";
+		}
+		else if (strcmp(command, "freeb") == 0)
+		{
+			std::cout << "Total of free blocks: " << superblock.free_blocks_num << "\n";
+			std::cout << "Next free block: " << superblock.next_free_block << "\n";
+			for (int i = 0; i < BLOCKS; i++)
+			{
+				if (superblock.free_blocks[i] == 0)
+				{
+					std::cout << "[" << i << "] ";
+				}
+			}
+			std::cout << "\n";
+		}
 		else if (strcmp(command, "cd") == 0)
 		{
 			std::cin >> command;
 			unsigned short inode_id = namei(iget(current_inode), command);
-
-			//TODO: validate is directory
+			Inode tmp = iget(inode_id);
 			if (inode_id == 0)
 			{
 				std::cout << "wizix: cd: " << command << ": No such file or directory\n";
 			}
+			else if (tmp.type == DIRECTORY)
+			{
+
+				if (inode_id != current_inode)
+				{
+					if (strcmp(command, "..") == 0)
+					{
+						int i = current_path.find_last_of("/");
+						current_path = current_path.substr(0, i);
+					}
+					else
+					{
+						if (current_path.size() > 1)
+						{
+							current_path = current_path + "/";
+						}
+						current_path = current_path + command;
+					}
+					if (current_path.size() == 0)
+					{
+						current_path = "/";
+					}
+					current_inode = inode_id;
+				}
+			}
 			else
 			{
-				current_inode = inode_id;
+				std::cout << "wizix: cd: " << command << ": Is not a directory\n";
 			}
 		}
 		else
@@ -166,16 +235,6 @@ void filesystem::createDisk(const char *disk_file)
 
 	superblock.modified = false;
 
-	for (int i = 0; i < BLOCKS; i++)
-	{
-		superblock.free_blocks[i] = 0;
-	}
-
-	for (int i = 0; i < INODES; i++)
-	{
-		superblock.free_inodes[i] = 0;
-	}
-
 	// Storing BootBlock
 	for (int i = 0; i < BLOCK_SIZE; i++)
 	{
@@ -188,16 +247,34 @@ void filesystem::createDisk(const char *disk_file)
 	createRootDir();
 
 	// Remove first 3 inodes from free inode, including root
-	superblock.free_inodes[0] = 1;
-	superblock.free_inodes[EXT4_BAD_INO] = 1;
-	superblock.free_inodes[EXT4_ROOT_INO] = 1;
+	for (int i = 0; i < INODES + 1; i++)
+	{
+		if (i <= EXT4_ROOT_INO)
+		{
+			superblock.free_inodes[i] = 1;
+		}
+		else
+		{
+			superblock.free_inodes[i] = 0;
+		}
+	}
 	superblock.next_free_inode = EXT4_ROOT_INO + 1;
 	superblock.free_inodes_num = superblock.free_inodes_num - 3;
 
 	// Remove root dir block from free_blocks
-	superblock.free_blocks[superblock.next_free_block] = 1;
+	for (int i = 0; i < BLOCKS + 1; i++)
+	{
+		if (i <= superblock.next_free_block)
+		{
+			superblock.free_blocks[i] = 1;
+		}
+		else
+		{
+			superblock.free_blocks[i] = 0;
+		}
+	}
 	superblock.next_free_block = superblock.next_free_block + 1;
-	superblock.free_blocks_num = superblock.free_blocks_num - 1;
+	superblock.free_blocks_num = superblock.free_blocks_num - 2;
 
 	// Storing SuperBlock after BootBlock
 	fseek(diskptr, BLOCK_SIZE, SEEK_SET);
@@ -231,6 +308,9 @@ void filesystem::createRootDir()
 	root_inode.access_time = now;
 	root_inode.inode_time = now;
 	root_inode.links = 1;
+	for(int i = 0; i < 13; i++){
+		root_inode.content[i] = 0;
+	}
 	root_inode.content[0] = superblock.next_free_block;
 	root_inode.size = BLOCK_SIZE;
 
@@ -251,7 +331,8 @@ void filesystem::createRootDir()
 	fwrite(&root_inode, sizeof(Inode), 1, diskptr);
 
 	LOG("ROOT dir stored on: " << (BLOCK_SIZE * 2) + (sizeof(Inode) * EXT4_ROOT_INO));
-	LOG("ROOT dir stored on: " << (BLOCK_SIZE * 2) + (sizeof(Inode) * EXT4_ROOT_INO));
+	LOG("ROOT inode: " << EXT4_ROOT_INO);
+	LOG("ROOT block: " << root_inode.content[0]);
 }
 
 int filesystem::getInodeListBlockCount()
@@ -332,7 +413,10 @@ void filesystem::touch(Inode parent_inode, const char *file_name)
 		file_inode.access_time = now;
 		file_inode.inode_time = now;
 		file_inode.links = 1;
+		for (int i = 0; i < 13; i++)
+			file_inode.content[i] = 0;
 		file_inode.content[0] = block_id;
+
 		file_inode.size = BLOCK_SIZE;
 
 		diskptr = fopen(DISK_FILE, "rb+");
@@ -391,17 +475,17 @@ void filesystem::rm(Inode parent_inode, const char *file_name)
 				{
 					LOG("Removing file at inode: " << dirlist[i].inode);
 					superblock.free_inodes[dirlist[i].inode] = 0;
+					superblock.free_inodes_num = superblock.free_inodes_num + 1;
 
 					for (int i = 0; i < 10; i++)
 					{
 						if (tmp.content[i] > 0)
 						{
+							LOG("Liberating block: " << tmp.content[i]);
 							superblock.free_blocks[tmp.content[i]] = 0;
-							superblock.free_blocks_num++;
+							superblock.free_blocks_num = superblock.free_blocks_num + 1;
 						}
 					}
-
-					superblock.free_inodes_num++;
 
 					superblock.next_free_inode = getNextFreeInode();
 					superblock.next_free_block = getNextFreeBlock();
@@ -412,8 +496,8 @@ void filesystem::rm(Inode parent_inode, const char *file_name)
 					diskptr = fopen(DISK_FILE, "rb+");
 					fseek(diskptr, parent_inode.content[0] * BLOCK_SIZE, SEEK_SET);
 					fwrite(&dirlist, sizeof(dirlist), 1, diskptr);
-
 					fclose(diskptr);
+
 					return;
 				}
 			}
@@ -635,6 +719,9 @@ void filesystem::vi(Inode parent_inode, const char *file_name)
 	std::cout << "Welcome to the mini-VI (a per line editor), type (in a new line) :q to exit and :wq to save and exit\n";
 	std::cout.flush();
 	std::string s;
+
+	char buffer[BLOCK_SIZE];
+
 	do
 	{
 		std::string tmp_s;
@@ -659,7 +746,6 @@ void filesystem::vi(Inode parent_inode, const char *file_name)
 	LOG("Storing: " << s.size() << " bytes");
 	LOG(s);
 
-	char buffer[BLOCK_SIZE];
 	if (s.size() <= BLOCK_SIZE)
 	{
 		strcpy(buffer, s.c_str());
@@ -804,7 +890,7 @@ unsigned short filesystem::getNextFreeInode()
 unsigned short filesystem::getNextFreeBlock()
 {
 	int inodeblocks = getInodeListBlockCount();
-	for (int i = (2 + inodeblocks + 1); i < INODES; i++)
+	for (int i = (2 + inodeblocks + 1); i < BLOCKS; i++)
 	{
 		if (superblock.free_blocks[i] == 0)
 		{
@@ -822,7 +908,6 @@ void filesystem::ls(Inode inode)
 	case REGULAR:
 	{
 		LOG("Is a regular file");
-		break;
 	}
 	case DIRECTORY:
 	{

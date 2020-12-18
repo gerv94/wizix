@@ -6,7 +6,6 @@
 class filesystem
 {
 private:
-
 	BootBlock bootblock;   // BootBlock structure just empty
 	SuperBlock superblock; // SuperBlock structure
 
@@ -25,14 +24,14 @@ public:
 	unsigned short namei(Inode, const char *); /* convert path name to inode */
 
 	void startConsole();
-	void touch(Inode, const char *); // creates a file
+	void touch(Inode, const char *);		  // creates a file
 	void mkdir(unsigned short, const char *); // creates a directory
-	void ls(Inode);					 // lists current inode directory items
-	void cd(Inode);					 // change directory
-	void rm(Inode, const char *);	 // removes a file inode
-	void rmdir(Inode, const char *); // removes an empty directory inode
-	void vi(Inode, const char *); // removes an empty directory inode
-	void cat(Inode, const char *); // removes an empty directory inode
+	void ls(Inode);				  // lists current inode directory items or the attributes of the cirrent file inode
+	void cd(Inode);							  // change directory
+	void rm(Inode, const char *);			  // removes a file inode
+	void rmdir(Inode, const char *);		  // removes an empty directory inode
+	void vi(Inode, const char *);			  // removes an empty directory inode
+	void cat(Inode, const char *);			  // removes an empty directory inode
 
 	void updateSuperBlock();
 

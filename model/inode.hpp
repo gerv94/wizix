@@ -9,9 +9,11 @@ enum INODE_TYPE
 	FIFO
 };
 
-//inode node
+
 struct Inode
 {
+	// ::::::::::::::::::::::::::::::::::::::::::::::::
+
 	unsigned short own_usr;
 	unsigned short own_grp;
 	INODE_TYPE type;
@@ -67,7 +69,7 @@ file and writes only 1 byte of data at byte offset 1000 in the file, the size of
 file is 1001 bytes. 
 - size: int		4 bytes
 
-- total: 84 bytes  ?? TODO: to be defined 
+- total: 72
 
 
 
