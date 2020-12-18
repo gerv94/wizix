@@ -1,8 +1,5 @@
 #include "../lib/shared.hpp"
 
-#define INODES 10
-#define BLOCKS 12
-
 struct SuperBlock
 {
 	// ::::::::::::::::::::::::::::::::::::::::::::::::
@@ -17,8 +14,8 @@ struct SuperBlock
 
 	bool modified;
 
-	int free_blocks[INODES] = {0};
-	int free_inodes[BLOCKS] = {0};
+	int free_blocks[INODES] = {0}; // 0 means free, 1 occupied
+	int free_inodes[BLOCKS] = {0}; // 0 means free, 1 occupied
 };
 
 /*

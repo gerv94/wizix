@@ -36,6 +36,9 @@
 
 #define DISK_FILE "filesystem.wz"
 #define BLOCK_SIZE 512 // The block number size is 512B
+#define INODES 10
+#define BLOCKS 20
+#define MAX_DIR 16
 
 #define DEBUG_MODE true
 #define LOG(x)      \

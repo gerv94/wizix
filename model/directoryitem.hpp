@@ -1,9 +1,8 @@
 struct DirectoryItem
 {
-	unsigned short inode;
-	char name[14];
+	unsigned short inode = 0;
+	char name[14] = {0};
 };
-
 
 /*
 

@@ -12,23 +12,6 @@ enum INODE_TYPE
 //inode node
 struct Inode
 {
-	//unsigned short i_mode; //Access authority. r--read, w--write, x--execute
-	//unsigned short i_cnt;  //Number of links. How many file names point to this inode
-	////unsigned short i_uid; //The user id of the file
-	////unsigned short i_gid; //The user group id of the file
-	//char i_uname[20];	 //The user the file belongs to
-	//char i_gname[20];	 //User group to which the file belongs
-	//unsigned int i_size; //File size, in bytes (B)
-	//time_t i_ctime;		 //The time of the last change of the inode
-	//time_t i_mtime;		 //The last time the file content changed
-	//time_t i_atime;		 //The last time the file was opened
-	//int i_dirBlock[10];	 //10 direct blocks. 10*512B = 5120B = 5KB
-	//int i_indirBlock_1;	 //The first level indirect block. 512B/4 * 512B = 128 * 512B = 64KB
-	//unsigned int i_indirBlock_2; //Secondary indirect block. (512B/4)*(512B/4) * 512B = 128*128*512B = 8192KB = 8MB
-	//unsigned int i_indirBlock_3; //Three-level indirect block. (512B/4)*(512B/4)*(512B/4) * 512B = 128*128*128*512B = 1048576KB = 1024MB = 1G
-	//The file system is too small, so let's omit the secondary and tertiary indirect blocks for now
-	// ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
 	unsigned short own_usr;
 	unsigned short own_grp;
 	INODE_TYPE type;

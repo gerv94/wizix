@@ -6,31 +6,11 @@
 class filesystem
 {
 private:
-	/* data */
-	FILE *fw;				//Virtual disk file write file pointer
-	FILE *fr;				//Virtual disk file read file pointer
 
-	int Superblock_StartAddr;  //Super block Offset address, occupying a disk block
-	int InodeBitmap_StartAddr; //Inode bitmap Offset address, occupies two disk blocks, monitors the status of up to 1024 inodes
-	int BlockBitmap_StartAddr; //block bitmap Offset address, occupies 20 disk blocks, monitors the status of 10240 disk blocks (5120KB) at most
-	int Inode_StartAddr;	   //The offset address of the inode node area, occupying INODE_NUM/(BLOCK_SIZE/INODE_SIZE) disk blocks
-	int Block_StartAddr;	   //Offset address of block data area, occupying INODE_NUM disk blocks
-	int Sum_Size;			   //Virtual disk file size
-	int File_Max_Size;		   //The maximum size of a single file, 10 direct blocks, first-level indirect blocks, and second-level indirect blocks
-
-	bool inode_bitmap[INODE_NUM]; //inode bitmap
-	bool block_bitmap[BLOCK_NUM]; //Disk block bitmap
-
-	char Cur_User_Name[110];  //Currently logged in user name
-	char Cur_Group_Name[110]; //Current login user group name
-
-	//:::::::::::::::::::::::::::::::::::::::::::::::::::::
-
-	BootBlock bootblock; // BootBlock structure just empty
+	BootBlock bootblock;   // BootBlock structure just empty
 	SuperBlock superblock; // SuperBlock structure
 
 	FILE *diskptr;
-
 
 public:
 	filesystem();
@@ -42,17 +22,23 @@ public:
 	int getInodeListBlockCount();
 	void createRootDir();
 	Inode iget(unsigned short);
-	Inode namei(const char *); /* convert path name to inode */ 
+	unsigned short namei(Inode, const char *); /* convert path name to inode */
 
-	void touch(unsigned short, const char *);
+	void startConsole();
+	void touch(Inode, const char *); // creates a file
+	void mkdir(unsigned short, const char *); // creates a directory
+	void ls(Inode);					 // lists current inode directory items
+	void cd(Inode);					 // change directory
+	void rm(Inode, const char *);	 // removes a file inode
+	void rmdir(Inode, const char *); // removes an empty directory inode
+	void vi(Inode, const char *); // removes an empty directory inode
+	void cat(Inode, const char *); // removes an empty directory inode
 
+	void updateSuperBlock();
 
-	bool format(const char *); //Formats the virtual disk file
-
-	int InodeAlloc();
-	int BlockAlloc();
+	unsigned short getNextFreeInode();
+	unsigned short getNextFreeBlock();
 };
-
 
 /*
 
